@@ -1,6 +1,7 @@
 import subprocess
 import sys
-import files.filescripts as scripts
+import foxpro_extractor
+import mysql_extractor
 
 if __name__ == "__main__":
     print('installing packages...')
@@ -10,5 +11,5 @@ if __name__ == "__main__":
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
         print(package + ' installed')
     
-    foxproData = scripts.foxpro_extractor.getExcel()
+    foxproData = foxpro_extractor.getExcel()
 
