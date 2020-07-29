@@ -11,5 +11,5 @@ if __name__ == "__main__":
         subprocess.check_call([sys.executable, "-m", "pip", "install", package])
         print(package + ' installed')
     
-    # foxproData = foxpro_extractor.getExcel()
+    foxproData = foxpro_extractor.getExcel()
     mysqldata = mysql_extractor.getExcel()

@@ -1,2 +1,7 @@
 *.env
 *.xls
+*.dbf
+*.csv
+*.sql
+*.xlsx
+*/__pycache__/*
