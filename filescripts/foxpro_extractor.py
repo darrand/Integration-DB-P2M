@@ -11,7 +11,8 @@ def getExcel():
     load_dotenv(dotenv_path)
 
     DBF_NAME = os.environ.get('DBF_NAME')
-    
+    print(DBF_NAME)
+
     dbf = DBF(DBF_NAME)
 
     with open('db1.csv', 'w', newline='') as file:    

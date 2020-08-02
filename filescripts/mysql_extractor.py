@@ -13,14 +13,16 @@ def getExcel():
     DB = os.environ.get('DB')
     USER = os.environ.get('USER')
     PASS = os.environ.get('PASS')
-    TABLE = os.environ.get('TABLE')
+    TABLE = 'indonesia'
 
     connect = mysqldb.connect(host=HOST, database=DB, user=USER, password=PASS)
     query = 'SELECT * FROM ' + TABLE
     cursor = connect.cursor()
     cursor.execute(query)
     records = cursor.fetchall()
-    print(records)
+    print(
+        records
+    )
 
     if (connect.is_connected()):
         connect.close()
