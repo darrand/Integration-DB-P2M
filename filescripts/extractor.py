@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import foxpro_extractor
-import mysql_extractor
+import mysql_injector
 
 def install_packages():
     print('installing packages...')
@@ -15,4 +15,4 @@ if __name__ == "__main__":
     # install_packages()
     
     # foxproData = foxpro_extractor.getExcel()
-    mysqldata = mysql_extractor.getExcel()
+    mysqldata = mysql_injector.inject()
