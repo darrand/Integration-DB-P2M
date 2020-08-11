@@ -1,0 +1,3 @@
+- .cst tidak bisa dibaca karena ada elemen binary (sudah tercompile) 
+-> jadinya dihapus elemen binarynya(hanya bagian header), lalu diubah filenya ke .csv
+- mysql injector sudah bisa (hanya master_peserta)

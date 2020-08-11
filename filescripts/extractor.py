@@ -14,5 +14,5 @@ def install_packages():
 if __name__ == "__main__":
     # install_packages()
     
-    # foxproData = foxpro_extractor.getExcel()
-    mysqldata = mysql_injector.inject()
+    foxproData = foxpro_extractor.getExcel()
+    # mysqldata = mysql_injector.inject()
