@@ -6,33 +6,33 @@ import pandas as pd
 from os.path import join, dirname
 from dotenv import load_dotenv
 
-def getExcel(header=True):
-    dotenv_path = join(dirname(__file__), '.env')
-    load_dotenv(dotenv_path)
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+HOST = os.environ.get('HOST')
+DB = os.environ.get('DB')
+USER = os.environ.get('USER')
+PASS = os.environ.get('PASS')
 
-    EXCEL = os.environ.get('EXCEL')
+def getExcel(name, header=True):
+    excel = name
     records = None
     if header:
-        records = pd.read_csv(EXCEL)
+        records = pd.read_csv(excel)
     else:
-        records = pd.read_csv(EXCEL, header=None)
+        records = pd.read_csv(excel, header=None)
     return records
 
-def inject():
-    dotenv_path = join(dirname(__file__), '.env')
-    load_dotenv(dotenv_path)
+def master_peserta():
+    data = getExcel('master_peserta.csv')
+    inject(data, 'master_peserta')
 
-    HOST = os.environ.get('HOST')
-    DB = os.environ.get('DB')
-    USER = os.environ.get('USER')
-    PASS = os.environ.get('PASS')
-    
+def inject(records, query):    
     connect = mysqldb.connect(host=HOST, database=DB, user=USER, password=PASS)
     cursor = connect.cursor()
-    data = getExcel()
+    data = records
     headers = tuple(data.columns.values)
 
-    tmp_query = 'INSERT INTO master_peserta '+ str(headers).replace("'", "`") + ' VALUES '
+    tmp_query = 'INSERT INTO ' + query + ' ' + str(headers).replace("'", "`") + ' VALUES '
     for i in range(data.shape[0]):
         new_entry = data.loc[i]
         tmp_query += '\n' + str(tuple(new_entry)).replace('nan', 'NULL') + ','
