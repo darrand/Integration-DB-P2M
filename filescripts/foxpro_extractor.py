@@ -15,20 +15,39 @@ def getExcel():
     CST_NAME = os.environ.get('CST_NAME')
 
     data = pd.read_csv(CST_NAME, header=None)
-    parsed = []
+    
+    string_dump = ''
     for i in range(data.shape[0]):
-        example = data.loc[i].values[0] 
-        outer = example.split("*")
-        outer.pop(0)
-        
-        # if i > 136:
-        #     print(outer)
-        for el in outer:
-            inner = re.split("\s{2,}|SEKRET[\\\w\d]{2,}|SEKRET ", el)
-            parsed.append(inner)
-    for i in parsed:
-        print(len(i))
-        print(i)
+        string_dump += data.loc[i].values[0]
+    splitted_dump = re.split('(SEKRET|PP-WEL|PLTHN)', string_dump)
+
+    records = {'SEKRET':[], 'PP-WEL':[], 'PLTHN':[]}
+    for i in range(len(splitted_dump)):
+        if splitted_dump[i] in records.keys():
+            records[splitted_dump[i]].append(splitted_dump[i-1])
+
+    entries = []
+    for key in records.keys():
+        if '' in records[key]:
+            records[key].remove('')
+        for el in records[key]:
+            entry = re.split('\s{2,}', el)
+            if '' in entry:
+                entry.remove('')
+            entry.append(key)
+            entries.append(entry)
+    cnt = 0
+    cnt1 = 0
+    for i in range(len(entries)):
+        if len(entries[i]) > 6:
+            print(entries[i])
+            cnt += 1
+        elif len(entries[i]) < 6:
+            cnt1 += 1
+    print('total <6 = ', cnt1)
+    print('total >6 = ', cnt)
+    print('all = ', len(entries))
+
     # dbf = DBF(DBF_NAME)
 
     # with open(CST_NAME, 'r') as csv_file:

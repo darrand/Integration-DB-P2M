@@ -15,4 +15,4 @@ if __name__ == "__main__":
     # install_packages()
     
     foxproData = foxpro_extractor.getExcel()
-    # mysqldata = mysql_injector.inject()
+    # mysqldata = mysql_injector.master_peserta()
