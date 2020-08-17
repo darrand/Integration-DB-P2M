@@ -9,10 +9,20 @@ from dbfread import DBF
 
 def getExcel():
     data = fix_anomaly(getData())
-    writeExcel()
+    writeExcel(data)
 
-def writeExcel():
-    pass
+def writeExcel(data):
+    with open('restored_data.csv', mode='w', newline='') as restored_data:
+        writer = csv.writer(restored_data)
+        writer.writerow(['No. Voucher', 'Tanggal+Account', 'Keterangan','Debet', 'Kredit', 'Divisi'])
+        anomalies = []
+        for el in data:
+            if len(el) > 6:
+                anomalies.append(el)
+            else:
+                writer.writerow(el)
+        for el in anomalies:
+            writer.writerow(el)
 
 def getData():
     dotenv_path = join(dirname(__file__), '.env')
@@ -44,45 +54,45 @@ def getData():
             entry.append(key)
             entries.append(entry)
     return entries
-    # dbf = DBF(DBF_NAME)
-
-    # with open(CST_NAME, 'r') as csv_file:
-    #     reader = csv.reader(csv_file)
-    #     for row in reader:
-    #         print(row)    
-        # writer = csv.writer(file)
-        # writer.writerow(dbf.field_names)
-        # for record in dbf:
-        #     writer.writerow(list(record.values()))
 
 def fix_anomaly(data):    
     cnt = 0
     cnt1 = 0
-    a = 0
     # Check anomaly data
-    anomalies = []
+    anomalies_less = []
+    anomalies_more = []
     for i in range(len(data)):    
         if len(data[i]) > 6:
             if len(data[i]) <= 7:
-                anomalies.append(i)
-                a += 1
-            else:
-                print(data[i], i)
+                anomalies_more.append(i)
             cnt += 1
         elif len(data[i]) < 6:
+            # print(data[i], i)
+            anomalies_less.append(i)
             cnt1 += 1
     # Fix anomaly data
     for i in range(len(data)):
         if len(data[i]) == 7:
             tmp = data[i].pop(2) + ' ' + data[i].pop(2)
             data[i].insert(2, tmp)
-
+        if len(data[i]) < 6:
+            tmp = data[i].pop(0).split()
+            for j in tmp[::-1]:
+                data[i].insert(0, j)
+            if len(data[i]) > 6 or (len(data[i]) == 6 and data[i][0] == 'AC'):
+                tmp = data[i].pop(0) + '-' + data[i].pop(0)
+                data[i].insert(0, tmp)
+            if len(data[i]) < 6:
+                tmp = re.split('(KK|KM)', data[i].pop(0))
+                if len(tmp) > 2:
+                    tmp2 = [tmp[0] + tmp[1], tmp[2]]
+                for j in tmp2[::-1]:
+                    data[i].insert(0, j)
     # re-check
     # print('CHECKED')
-    # for i in anomalies:
-    #     print(data[i])
-
-    print(a)
-    print('total <6 = ', cnt1)
-    print('total >6 = ', cnt)
-    print('all = ', len(data))
+    anomalies_unique = []
+    for i in range(len(data)):
+        if len(data[i]) != 6:
+            anomalies_unique.append(i)
+    
+    return data

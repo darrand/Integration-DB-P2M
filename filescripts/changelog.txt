@@ -4,5 +4,8 @@
 
 
 - data foxpro banyak anomali (mungkin karena pengisian atau saat konversi paksa ke .csv) 
-- sejauh ini ditemukan entry yang sesuai adalah dengan panjang 6, kurang lebih ada 1694 anomali (1406 dibawah 6, 289 dibawah 6)
-- sudah di fix 256/289 data diatas 6
+- sejauh ini ditemukan entry yang sesuai adalah dengan panjang 6, kurang lebih ada 1695 anomali (1406 dibawah 6, 289 dibawah 6)
+- sudah di fix 256/289 data panjang diatas 6
+- sudah di fix 662/1406 data panjang dibawah 6
+- sudah di fix 1406/1406 data panjang dibawah 6
+- data anomali tinggal 33 (diatas 6), data sudah ditulis ke restored_data.csv
