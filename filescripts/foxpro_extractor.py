@@ -8,6 +8,13 @@ from dotenv import load_dotenv
 from dbfread import DBF
 
 def getExcel():
+    data = fix_anomaly(getData())
+    writeExcel()
+
+def writeExcel():
+    pass
+
+def getData():
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
 
@@ -36,18 +43,7 @@ def getExcel():
                 entry.remove('')
             entry.append(key)
             entries.append(entry)
-    cnt = 0
-    cnt1 = 0
-    for i in range(len(entries)):
-        if len(entries[i]) > 6:
-            print(entries[i])
-            cnt += 1
-        elif len(entries[i]) < 6:
-            cnt1 += 1
-    print('total <6 = ', cnt1)
-    print('total >6 = ', cnt)
-    print('all = ', len(entries))
-
+    return entries
     # dbf = DBF(DBF_NAME)
 
     # with open(CST_NAME, 'r') as csv_file:
@@ -58,3 +54,35 @@ def getExcel():
         # writer.writerow(dbf.field_names)
         # for record in dbf:
         #     writer.writerow(list(record.values()))
+
+def fix_anomaly(data):    
+    cnt = 0
+    cnt1 = 0
+    a = 0
+    # Check anomaly data
+    anomalies = []
+    for i in range(len(data)):    
+        if len(data[i]) > 6:
+            if len(data[i]) <= 7:
+                anomalies.append(i)
+                a += 1
+            else:
+                print(data[i], i)
+            cnt += 1
+        elif len(data[i]) < 6:
+            cnt1 += 1
+    # Fix anomaly data
+    for i in range(len(data)):
+        if len(data[i]) == 7:
+            tmp = data[i].pop(2) + ' ' + data[i].pop(2)
+            data[i].insert(2, tmp)
+
+    # re-check
+    # print('CHECKED')
+    # for i in anomalies:
+    #     print(data[i])
+
+    print(a)
+    print('total <6 = ', cnt1)
+    print('total >6 = ', cnt)
+    print('all = ', len(data))

@@ -1,3 +1,8 @@
 - .cst tidak bisa dibaca karena ada elemen binary (sudah tercompile) 
 -> jadinya dihapus elemen binarynya(hanya bagian header), lalu diubah filenya ke .csv
 - mysql injector sudah bisa (hanya master_peserta)
+
+
+- data foxpro banyak anomali (mungkin karena pengisian atau saat konversi paksa ke .csv) 
+- sejauh ini ditemukan entry yang sesuai adalah dengan panjang 6, kurang lebih ada 1694 anomali (1406 dibawah 6, 289 dibawah 6)
+- sudah di fix 256/289 data diatas 6
