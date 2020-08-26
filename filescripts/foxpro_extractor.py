@@ -14,10 +14,17 @@ from dotenv import load_dotenv
 from dbfread import DBF
 
 def getExcel():
+    '''
+    Pengambilan data untuk ditulis ke bentuk excel(xls) dan csv
+    '''
     data = fix_anomaly(getData())
     writeExcel(data)
 
 def writeExcel(data):
+    '''
+    Penulisan entry ke bentuk excel (xls) dan csv
+    dengan format biasa untuk csv dan format sesuai journal untuk xls
+    '''
     wb = Workbook()
     sheet = wb.add_sheet('DTJUR')
     header = ['No. Voucher', 'Tanggal','Account', 'Keterangan','Debet', 'Kredit', 'Divisi']
@@ -53,6 +60,11 @@ def writeExcel(data):
     wb.save('template.xls')
 
 def getData():
+    '''
+    Mengambil data dari parameter yang didefinisikan .env
+    dengan slicing string sesuai dengan divisi jurnal (sekaligus penulisan salah yang ada),
+    mengembalikan list dengan isi [data], divisi
+    '''
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
 
@@ -92,19 +104,28 @@ def getData():
             entries.append(entry)
     return entries
 
-def fix_anomaly(data):    
+def fix_anomaly(data):
+    '''
+    Ditemukan banyak anomali data dari fungsi getData()
+    data normal memiliki panjang 6, data anomali memiliki panjang tidak 6
+    fungsi ini digunakan sebagai "pembersih" untuk data tersebut
+    fungsi ini memisahkan dan memfilter data sesuai dengan panjangnya
+    Setelah itu untuk setiap data pada posisi ke 2 terdapat atribut tanggal yang tergabung dengan atribut lain
+    atribut tersebut dipisah dan diletakkan di posisi ke 2 dan ke 3 
+    '''
     cnt = 0
     cnt1 = 0
     # Check anomaly data
     anomalies_less = []
     anomalies_more = []
     for i in range(len(data)):    
+        # Pengecekan data > 6
         if len(data[i]) > 6:
             if len(data[i]) <= 7:
                 anomalies_more.append(i)
             cnt += 1
+        # Pengecekan data < 6
         elif len(data[i]) < 6:
-            # print(data[i], i)
             anomalies_less.append(i)
             cnt1 += 1
     # Fix anomaly data
@@ -126,19 +147,17 @@ def fix_anomaly(data):
                 for j in tmp2[::-1]:
                     data[i].insert(0, j)
     # re-check
-    # print('CHECKED')
     anomalies_unique = []
     for i in range(len(data)):
         if len(data[i]) != 6:
             anomalies_unique.append(i)
-
+    # split date
     error_date = []
     for i in range(len(data)):
         if i in anomalies_unique:
             continue
         else:
             tmp = data[i].pop(1)
-            # print(i)
             try:
                 date = dt.datetime.strptime(tmp[0:8], '%Y%m%d').date()
             except ValueError:
@@ -148,7 +167,7 @@ def fix_anomaly(data):
             account = tmp[8:]
             data[i].insert(1, account)
             data[i].insert(1, date)
-
+    # case khusus karena terdapat data yang salah tanggal
     for i in range(len(error_date)):
         tmp = ''
         if i == 0:
@@ -171,9 +190,8 @@ def fix_anomaly(data):
         account = tmp[8:]
         data[error_date[i]].insert(1, account)
         data[error_date[i]].insert(1, date)
-
+    # Case khusus untuk beberapa data yang tidak ter split normal
     for i in range(len(anomalies_unique)):
-        # print(data[anomalies_unique[i]])
         if i == 0:
             broken_data = data.pop(anomalies_unique[i])
             tmp = []
@@ -193,6 +211,7 @@ def fix_anomaly(data):
                 k.insert(1, acc)
                 k.insert(1, date)
                 data.insert(anomalies_unique[i], k)
+    # Pembenaran tanggal untuk case khusus diatas
     cnt = 0
     for i in data:
         if len(i) > 7:
