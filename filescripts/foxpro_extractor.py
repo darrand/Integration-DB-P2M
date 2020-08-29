@@ -7,6 +7,7 @@ import csv
 import xlwt
 import openpyxl
 import xlrd
+from difflib import SequenceMatcher
 from xlutils.copy import copy
 from xlwt import Workbook
 from os.path import join, dirname
@@ -18,7 +19,8 @@ def getExcel():
     Pengambilan data untuk ditulis ke bentuk excel(xls) dan csv
     '''
     data = fix_anomaly(getData())
-    writeExcel(data)
+    mapping(data)
+    # writeExcel(data)
 
 def writeExcel(data):
     '''
@@ -46,7 +48,7 @@ def writeExcel(data):
         for el in data:
                 writer.writerow(el)
 
-    rb = xlrd.open_workbook(filename='template.xls')
+    rb = xlrd.open_workbook(filename='template.xlsx')
     wb = copy(rb)
 
     s = wb.get_sheet(0)
@@ -58,6 +60,45 @@ def writeExcel(data):
         for j in range(len(entry)):
             s.write(i,j,entry[j])
     wb.save('template.xls')
+
+def mapping(data):
+    wb = openpyxl.load_workbook(filename='table.xlsx')
+    s = wb.active
+    m_row = s.max_row
+    gl_acc_list = []
+    for i in range(2, m_row+1):
+        cell = s.cell(row=i, column=2)
+        gl_acc_list.append(cell.value)
+    wb.close
+    
+    wb = openpyxl.load_workbook(filename='april.xlsx')
+    s = wb.active
+    m_row = s.max_row
+    ui_acc_apr = []
+    for i in range(1, m_row+1):
+        ui_acc_apr.append([s.cell(i,5).value, s.cell(i, 10).value, s.cell(i, 18).value])
+    wb.close
+     
+    gl_acc_apr = []
+    for i in data:
+        if i[1].month == 4 and i[1].year == 2020:
+            gl_acc_apr.append(i)
+
+    for i in range(len(ui_acc_apr)):
+        for j in range(len(gl_acc_apr)):
+            desc_gl = gl_acc_apr[j][3].lower() if gl_acc_apr[j][3] != None else ''
+            desc_ui = ui_acc_apr[i][2].lower() if ui_acc_apr[i][2] != None else ''
+            sim_rate = similar(desc_gl, desc_ui) # fixnone
+            if ui_acc_apr[i][0].day == gl_acc_apr[j][1].day:
+                if sim_rate >= 0.8:
+                    continue
+                    # print(ui_acc_apr[i])
+                    # print(gl_acc_apr[j])
+            # filter di day
+            # filter lagi di rate
+
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 def getData():
     '''
@@ -237,4 +278,29 @@ def fix_anomaly(data):
                 tmp = i.pop(3) + ' ' + i.pop(3)
                 i.insert(3, tmp)
             cnt += 1
+
+    #fixing busted account numbers 
+    busted_acc = ['00.102', '00.125', '00.137', '10.107','500107','99.999','110101', '110107']
+    
+    for i in range(len(data)):
+        acc = data[i].pop(2)
+        if acc == busted_acc[0]:
+            data[i].insert(2, '300.102')
+        elif acc == busted_acc[1]:
+            data[i].insert(2, '500.125')
+        elif acc == busted_acc[2]:
+            data[i].insert(2, '500.137')
+        elif acc == busted_acc[3]:
+            data[i].insert(2, '110.107')
+        elif acc == busted_acc[4]:
+            data[i].insert(2, '500.107')
+        elif acc == busted_acc[5]:
+            data[i].insert(2, '999.999')
+        elif acc == busted_acc[6]:
+            data[i].insert(2, '110.101')
+        elif acc == busted_acc[7]:
+            data[i].insert(2, '110.107')
+        else:
+            data[i].insert(2, acc)
+
     return data
