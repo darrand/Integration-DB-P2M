@@ -76,26 +76,40 @@ def mapping(data):
     m_row = s.max_row
     ui_acc_apr = []
     for i in range(1, m_row+1):
-        ui_acc_apr.append([s.cell(i,5).value, s.cell(i, 10).value, s.cell(i, 18).value])
+        ui_acc_apr.append([s.cell(i,5).value, s.cell(i, 10).value, s.cell(i, 18).value
+        , s.cell(i, 14).value if s.cell(i, 14).value != None else 0, s.cell(i, 15).value if s.cell(i, 15).value != None else 0])
     wb.close
-     
+    
+    days = set()     
+    for i in ui_acc_apr:
+        days.add(i[0].day)
+    
     gl_acc_apr = []
     for i in data:
-        if i[1].month == 4 and i[1].year == 2020:
+        if i[1].month == 4 and i[1].year == 2020 and i[1].day in days:
             gl_acc_apr.append(i)
+    print(gl_acc_apr[0])
+    print(ui_acc_apr[0])
 
-    for i in range(len(ui_acc_apr)):
-        for j in range(len(gl_acc_apr)):
-            desc_gl = gl_acc_apr[j][3].lower() if gl_acc_apr[j][3] != None else ''
-            desc_ui = ui_acc_apr[i][2].lower() if ui_acc_apr[i][2] != None else ''
-            sim_rate = similar(desc_gl, desc_ui) # fixnone
-            if ui_acc_apr[i][0].day == gl_acc_apr[j][1].day:
-                if sim_rate >= 0.8:
-                    continue
-                    # print(ui_acc_apr[i])
-                    # print(gl_acc_apr[j])
-            # filter di day
-            # filter lagi di rate
+    # [' SR4-11/KM', datetime.date(2020, 4, 14), '110.101', 'ambil bni cek no. cp 125903', '61425000.00', '0.00', 'SEKRET']
+    # [datetime.datetime(2020, 4, 14, 0, 0), 711007, 'Hn. Pekerja proyek boiler-PLTU Palu : 3 org', 63000000, 0]
+    ui_to_gl = {}
+    for ui in ui_acc_apr:
+        for gl in gl_acc_apr:
+            term1 = int(float(gl[4])) == ui[3]
+            term2 = int(float(gl[5])) == ui[4]
+            # desc_gl = gl[3].lower() if gl[3] != None else ''
+            # desc_ui = ui[2].lower() if ui[2] != None else ''
+            # term3 = similar(desc_gl, desc_ui) >= 0.75
+            if term1 and term2: # Add term 3 if necessary
+                if ui[1] not in ui_to_gl.keys():
+                    ui_to_gl[ui[1]] = [gl[2]]
+                else:
+                    ui_to_gl[ui[1]].append(gl[2])
+    keys = list(ui_to_gl.keys())
+    for i in range(len(keys)):
+        print('Key: {}, Value: {}'.format(keys[i], str(ui_to_gl[keys[i]])))
+
 
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
