@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+import subprocess
 import sys
 import os
 import re
@@ -7,59 +9,118 @@ import csv
 import xlwt
 import openpyxl
 import xlrd
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkcalendar import Calendar, DateEntry
 from difflib import SequenceMatcher
 from xlutils.copy import copy
 from xlwt import Workbook
 from os.path import join, dirname
 from dotenv import load_dotenv
-from dbfread import DBF
 
-def getExcel():
+def getDate(date1, date2):
+    dates = [date1.get_date(), date2.get_date()]
+    return(dates)
+
+def statusCallBack(label):
+    if os.path.isfile('./output.xls'):
+        label.configure(text="Sukses, file yang dibuat berjudul \"output.xls\"")
+    else:
+        label.configure(text="Gagal")
+
+def UI():
+    master = tk.Tk()
+    master.title('Excel Generator GL P2M')
+    master.geometry('400x200')
+    topframe = tk.Frame(master)
+    bottomframe = tk.Frame(master)
+    
+    l1 = tk.Label(topframe, text='Pilih Tanggal Awal: ', font=("Arial", 15))
+    l1.grid(row = 0, column= 0, padx=10, pady=5)
+    
+    cal1 = DateEntry(topframe)
+    cal1.grid(row= 0, column= 1, padx=5, pady=5)
+
+    l2 = tk.Label(topframe, text='Pilih Tanggal Akhir:', font=("Arial", 15))
+    l2.grid(row= 1, column= 0, padx=10, pady=5)
+    
+    cal2 = DateEntry(topframe)
+    cal2.grid(row= 1, column= 1, padx=5, pady=5)
+
+    l3 = tk.Label(bottomframe, text='')
+    l3.grid(row= 3, column=0)
+
+    b = ttk.Button(bottomframe, text='Buat Excel',command=lambda : [getExcel(getDate(cal1, cal2)),statusCallBack(l3)])
+    b.grid(row=2, column=0, padx=10)
+    topframe.grid(row= 0, column= 0,padx=50, pady=10)
+    bottomframe.grid(row= 1, column= 0,padx=50, pady=10)
+    master.mainloop()
+
+def getExcel(filters):
     '''
     Pengambilan data untuk ditulis ke bentuk excel(xls) dan csv
     '''
     data = fix_anomaly(getData())
-    mapping(data)
-    # writeExcel(data)
+    if checkMapping() == False:
+        mapping(data)
+    filtered_data = date_filter(filters, data)
+    writeExcel(filtered_data)
+
+def date_filter(filter,data):
+    lower_date = filter[0]
+    upper_date = filter[1]
+    filtered_data = []
+    for i in data:
+        if i[1] >= lower_date and i[1] <= upper_date:
+            filtered_data.append(i)
+    return filtered_data
+
+def checkMapping():
+    status = False
+    try:
+        entries = getMapping(raw=True)
+        status = True if len(entries) >= 1 else False
+    except FileNotFoundError:
+        status = False    
+    return status
+
+def getMapping(raw=True):
+    entries = []
+    with open('maptable.csv', mode='r') as maptable:
+        reader = csv.reader(maptable, delimiter=',')   
+        for row in reader:
+            entries.append(row)
+
+    map_table = entries
+    mapping = {}
+    for i in range(len(map_table)):
+        datum = map_table[i]
+        for j in range(len(datum)):
+            if j == 0:
+                continue
+            else:
+                mapping[datum[j]] = datum[0]
+
+    return entries if raw else mapping
 
 def writeExcel(data):
     '''
     Penulisan entry ke bentuk excel (xls) dan csv
     dengan format biasa untuk csv dan format sesuai journal untuk xls
     '''
-    wb = Workbook()
-    sheet = wb.add_sheet('DTJUR')
-    header = ['No. Voucher', 'Tanggal','Account', 'Keterangan','Debet', 'Kredit', 'Divisi']
-    data.insert(0, header)
-    anomalies = []
-
+    mapping = getMapping(raw=False)
+    keys = list(mapping.keys())
+    wb = xlwt.Workbook()
+    sh = wb.add_sheet('sheet1')
+    
     for i in range(len(data)):
-        for j in range(len(data[i])):
-            if len(data[i]) > 7:
-                anomalies.append(data[i])
-            else:
-                sheet.write(i, j, data[i][j])
-
-    wb.save('restored_data.xls')
-
-    with open('restored_data.csv', mode='w', newline='') as restored_data:
-        writer = csv.writer(restored_data)
-        anomalies = []
-        for el in data:
-                writer.writerow(el)
-
-    rb = xlrd.open_workbook(filename='template.xlsx')
-    wb = copy(rb)
-
-    s = wb.get_sheet(0)
-    data.pop(0)
-    for i in range(len(data)):
-        entry = ['','Universitas Indonesia','','UKK-FT-UP2M IDR',str(data[i][1]),"'10407", "'00000000","'71",'','','',"'000","'000"
+        ui_acc = "'"+mapping[str(data[i][2])] if str(data[i][2]) in keys else ''
+        entry1 = ['','Universitas Indonesia','','UKK-FT-UP2M','IDR',str(data[i][1]),"'10407", "'00000000","'71",'',ui_acc,'',"'000","'000"
             ,data[i][4],data[i][5],str(data[i][1].strftime('%b'))+'-'+str(data[i][1].year)[2:], 'UKK-FT UP2M ' + data[i][0], data[i][3],'',data[i][3]
             ,'','','','','','','','J','']
-        for j in range(len(entry)):
-            s.write(i,j,entry[j])
-    wb.save('template.xls')
+        for j in range(len(entry1)):
+            sh.write(i,j,entry1[j])
+    wb.save('output.xls')
 
 def mapping(data):
     wb = openpyxl.load_workbook(filename='table.xlsx')
@@ -88,28 +149,35 @@ def mapping(data):
     for i in data:
         if i[1].month == 4 and i[1].year == 2020 and i[1].day in days:
             gl_acc_apr.append(i)
-    print(gl_acc_apr[0])
-    print(ui_acc_apr[0])
 
-    # [' SR4-11/KM', datetime.date(2020, 4, 14), '110.101', 'ambil bni cek no. cp 125903', '61425000.00', '0.00', 'SEKRET']
-    # [datetime.datetime(2020, 4, 14, 0, 0), 711007, 'Hn. Pekerja proyek boiler-PLTU Palu : 3 org', 63000000, 0]
     ui_to_gl = {}
     for ui in ui_acc_apr:
         for gl in gl_acc_apr:
             term1 = int(float(gl[4])) == ui[3]
             term2 = int(float(gl[5])) == ui[4]
-            # desc_gl = gl[3].lower() if gl[3] != None else ''
-            # desc_ui = ui[2].lower() if ui[2] != None else ''
-            # term3 = similar(desc_gl, desc_ui) >= 0.75
+            desc_gl = gl[3].lower() if gl[3] != None else ''
+            desc_ui = ui[2].lower() if ui[2] != None else ''
+            term3 = similar(desc_gl, desc_ui) >= 0.75
             if term1 and term2: # Add term 3 if necessary
                 if ui[1] not in ui_to_gl.keys():
                     ui_to_gl[ui[1]] = [gl[2]]
                 else:
                     ui_to_gl[ui[1]].append(gl[2])
     keys = list(ui_to_gl.keys())
+    table_map = []
     for i in range(len(keys)):
-        print('Key: {}, Value: {}'.format(keys[i], str(ui_to_gl[keys[i]])))
+        val = ui_to_gl[keys[i]]
+        ui_to_gl[keys[i]] = list(set(val))
+        # print('Key: {}, Value: {}'.format(keys[i], str(ui_to_gl[keys[i]])))
+        entry = ui_to_gl[keys[i]] if type(ui_to_gl[keys[i]]) is list else [ui_to_gl[keys[i]]]
+        # print(entry)
+        entry.insert(0, keys[i])
+        table_map.append(entry)
 
+    with open('maptable.csv', mode='w', newline='') as maptable:
+        writer = csv.writer(maptable)
+        for i in table_map:
+            writer.writerow(i)
 
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
@@ -123,16 +191,22 @@ def getData():
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
 
-    DBF_NAME = os.environ.get('DBF_NAME')
     CST_NAME = os.environ.get('CST_NAME')
 
-    data = pd.read_csv(CST_NAME, header=None)
+    #Change DTJUR.cst to DTJUR.csv (HARUS HAPUS 2 ROW ATAS DULU SECARA MANUAL)
+    if os.path.isfile('./'+CST_NAME+'.CST'):
+        filename = CST_NAME+'.CST'
+        base = os.path.splitext(filename)[0]
+        os.rename(filename, base + '.csv')
+
+    new_filename = CST_NAME + '.csv'
+    data = pd.read_csv(new_filename, header=None)
     
     string_dump = ''
     for i in range(data.shape[0]):
         string_dump += data.loc[i].values[0]
     splitted_dump = re.split('(SEKRET|SEKRE|SKRET|PP-WEL|P-WEL|PTHN|PLTHN|PP-OTO|PP-BM)', string_dump)
-
+    
     records = {'SEKRET':[], 'PP-WEL':[], 'PLTHN':[], 'PP-OTO':[], 'PP-BM':[]}
     for i in range(len(splitted_dump)):
         if splitted_dump[i] == 'SEKRE':
@@ -160,6 +234,7 @@ def getData():
     return entries
 
 def fix_anomaly(data):
+
     '''
     Ditemukan banyak anomali data dari fungsi getData()
     data normal memiliki panjang 6, data anomali memiliki panjang tidak 6
@@ -318,3 +393,6 @@ def fix_anomaly(data):
             data[i].insert(2, acc)
 
     return data
+
+if __name__ == "__main__":
+    UI()

@@ -1,0 +1,8 @@
+openpyxl
+numpy
+pandas
+python-dotenv
+xlrd
+xlwt
+xlutils
+tkcalendar
